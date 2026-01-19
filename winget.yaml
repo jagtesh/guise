@@ -1,0 +1,13 @@
+PackageIdentifier: Jagtesh.Guise
+PackageVersion: 0.1.0
+PackageName: Guise
+Publisher: Jagtesh
+License: MIT
+ShortDescription: Identity manager for developer tools.
+Installers:
+  - Architecture: x64
+    InstallerType: portable
+    InstallerUrl: https://github.com/jagtesh/guise/releases/download/v0.1.0/guise_windows_amd64.zip
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+    Commands:
+      - guise
