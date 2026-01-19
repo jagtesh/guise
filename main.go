@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -148,6 +149,13 @@ func main() {
 	}
 
 	// Define Defaults
+	var copilotPath string
+	if runtime.GOOS == "windows" {
+		copilotPath = filepath.Join(os.Getenv("LOCALAPPDATA"), "github-copilot")
+	} else {
+		copilotPath = filepath.Join(userHome, ".config", "github-copilot")
+	}
+
 	defaultProviders := []Provider{
 		{
 			ID:         "openai-codex",
@@ -170,7 +178,7 @@ func main() {
 		{
 			ID:         "github-copilot",
 			Name:       "GitHub Copilot CLI",
-			TargetPath: filepath.Join(userHome, ".config", "github-copilot"),
+			TargetPath: copilotPath,
 			Profiles:   []Profile{},
 		},
 	}
@@ -272,12 +280,14 @@ func updateProviderList(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "k":
 			if m.cursor > 0 {
 				m.cursor--
+				m.selectedProviderIdx = m.cursor
 			}
 		case "down", "j":
 			if m.cursor < len(m.config.Providers)-1 {
 				m.cursor++
+				m.selectedProviderIdx = m.cursor
 			}
-		case "enter":
+		case "enter", "right", "l":
 			m.selectedProviderIdx = m.cursor
 			m.cursor = 0
 			m.state = StateProfileList
@@ -291,7 +301,7 @@ func updateProfileList(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
+		case "esc", "left", "h":
 			m.state = StateProviderList
 			m.cursor = m.selectedProviderIdx
 		case "up", "k":
@@ -415,6 +425,21 @@ func (m model) renderProviderList() string {
 
 func (m model) renderProfileList() string {
 	p := m.config.Providers[m.selectedProviderIdx]
+
+	// Determine Active Name for Header
+	activeName := "NONE"
+	activeColor := lightGray
+	for _, prof := range p.Profiles {
+		if prof.ID == p.ActiveProfileID {
+			activeName = prof.Name
+			activeColor = green
+			break
+		}
+	}
+
+	headerStyled := lipgloss.NewStyle().Foreground(lightGray).Render(fmt.Sprintf("PROFILES: %s  |  ", p.Name)) +
+		lipgloss.NewStyle().Foreground(activeColor).Bold(true).Render(fmt.Sprintf("ACTIVE: %s", activeName))
+
 	s := ""
 	if len(p.Profiles) == 0 {
 		if _, err := os.Stat(p.TargetPath); err == nil {
@@ -424,6 +449,7 @@ func (m model) renderProfileList() string {
 		}
 	} else {
 		for i, prof := range p.Profiles {
+// ... existing loop logic ...
 			// Layout: [Cursor(2)] [Status(2)] [Name]
 			
 			// 1. Cursor Column
@@ -466,7 +492,7 @@ func (m model) renderProfileList() string {
 	if m.state == StateProfileList {
 		borderStyle = profileBoxStyle.Copy().BorderForeground(purple)
 	}
-	return borderStyle.Render("PROFILES: " + p.Name + "\n\n" + s)
+	return borderStyle.Render(headerStyled + "\n\n" + s)
 }
 
 // --- Core Operations ---
