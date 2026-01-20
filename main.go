@@ -178,34 +178,7 @@ func main() {
 
 	// Merge Defaults (Append if missing)
 	dirty := false
-// ... (rest of the merging logic remains the same)
 
-// ... (existing updateProviderList function)
-
-// --- Helpers ---
-
-// getStandardConfigPath returns the platform-specific standard config path for a CLI tool.
-// Windows: %LOCALAPPDATA%\<tool>
-// macOS/Linux: ~/.config/<tool>
-func getStandardConfigPath(tool, home string) string {
-	if runtime.GOOS == "windows" {
-		// Try LocalAppData first for CLIs, as AppData (Roaming) is for roaming profiles
-		localAppData := os.Getenv("LOCALAPPDATA")
-		if localAppData != "" {
-			return filepath.Join(localAppData, tool)
-		}
-		// Fallback to AppData
-		appData, _ := os.UserConfigDir()
-		if appData != "" {
-			return filepath.Join(appData, tool)
-		}
-	}
-	
-	// Unix-like (Linux/macOS) standard: ~/.config/<tool>
-	// Note: os.UserConfigDir() on macOS returns ~/Library/Application Support, 
-	// but most CLIs prefer ~/.config. We'll stick to ~/.config for consistency with CLI tools.
-	return filepath.Join(home, ".config", tool)
-}
 	for _, def := range defaultProviders {
 		found := false
 		for _, existing := range cfg.Providers {
@@ -606,4 +579,26 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	return os.WriteFile(dst, data, 0644)
+}
+// getStandardConfigPath returns the platform-specific standard config path for a CLI tool.
+// Windows: %LOCALAPPDATA%\<tool>
+// macOS/Linux: ~/.config/<tool>
+func getStandardConfigPath(tool, home string) string {
+	if runtime.GOOS == "windows" {
+		// Try LocalAppData first for CLIs, as AppData (Roaming) is for roaming profiles
+		localAppData := os.Getenv("LOCALAPPDATA")
+		if localAppData != "" {
+			return filepath.Join(localAppData, tool)
+		}
+		// Fallback to AppData
+		appData, _ := os.UserConfigDir()
+		if appData != "" {
+			return filepath.Join(appData, tool)
+		}
+	}
+
+	// Unix-like (Linux/macOS) standard: ~/.config/<tool>
+	// Note: os.UserConfigDir() on macOS returns ~/Library/Application Support, 
+	// but most CLIs prefer ~/.config. We'll stick to ~/.config for consistency with CLI tools.
+	return filepath.Join(home, ".config", tool)
 }
