@@ -67,4 +67,4 @@ Guise comes pre-configured for:
 You can add custom providers by editing `~/.guise/config.json`.
 
 ## License
-MIT
+BSD 3-Clause

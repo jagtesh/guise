@@ -3,7 +3,7 @@ class Guise < Formula
   homepage "https://github.com/jagtesh/guise"
   url "https://github.com/jagtesh/guise/archive/refs/tags/v0.1.0.tar.gz"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
-  license "MIT"
+  license "BSD-3-Clause"
 
   depends_on "go" => :build
 

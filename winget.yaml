@@ -2,7 +2,7 @@ PackageIdentifier: Jagtesh.Guise
 PackageVersion: 0.1.0
 PackageName: Guise
 Publisher: Jagtesh
-License: MIT
+License: BSD 3-Clause
 ShortDescription: Identity manager for developer tools.
 Installers:
   - Architecture: x64
