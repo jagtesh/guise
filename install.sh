@@ -5,14 +5,13 @@ REPO="jagtesh/guise"
 BINARY="guise"
 INSTALL_DIR="/usr/local/bin"
 
-echo "Installing Guise..."
-
-# Determine OS and Arch
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+# Detect OS and Arch
+OS="$(uname -s)"
 ARCH="$(uname -m)"
 
+# Normalize Arch
 if [ "$ARCH" == "x86_64" ]; then
-    ARCH="amd64"
+    ARCH="x86_64"
 elif [ "$ARCH" == "aarch64" ] || [ "$ARCH" == "arm64" ]; then
     ARCH="arm64"
 else
@@ -20,24 +19,39 @@ else
     exit 1
 fi
 
-# In a real scenario, we would download from GitHub Releases.
-# Since this is a local project simulation, we'll assume 'go install' or build.
-# For this script to be valid in the repo, I'll write the logic as if downloading a release.
-
-echo "Downloading latest release..."
-# URL="https://github.com/$REPO/releases/latest/download/guise-$OS-$ARCH"
-# curl -L $URL -o $BINARY
-# chmod +x $BINARY
-# sudo mv $BINARY $INSTALL_DIR/
-
-# For now, build locally if Go is present, otherwise fail gracefully instructions
-if command -v go &> /dev/null; then
-    echo "Go detected. Building from source..."
-    go build -o guise main.go
-    echo "Moving to $INSTALL_DIR (requires sudo)..."
-    sudo mv guise "$INSTALL_DIR/"
-    echo "Success! Run 'guise' to start."
+# Normalize OS
+if [ "$OS" == "Linux" ]; then
+    OS="Linux"
+elif [ "$OS" == "Darwin" ]; then
+    OS="Darwin"
 else
-    echo "Error: Pre-built binaries not yet hosted. Please install Go to build from source."
+    echo "Unsupported OS: $OS"
     exit 1
 fi
+
+FILE="${BINARY}_${OS}_${ARCH}.tar.gz"
+DOWNLOAD_URL="https://github.com/$REPO/releases/latest/download/$FILE"
+
+echo "Downloading Guise ($OS $ARCH)..."
+echo "URL: $DOWNLOAD_URL"
+
+# Create temp directory
+TMP_DIR=$(mktemp -d)
+curl -sL "$DOWNLOAD_URL" -o "$TMP_DIR/$FILE"
+
+echo "Installing..."
+tar -xzf "$TMP_DIR/$FILE" -C "$TMP_DIR"
+chmod +x "$TMP_DIR/$BINARY"
+
+# Move to install dir (requires sudo usually)
+if [ -w "$INSTALL_DIR" ]; then
+    mv "$TMP_DIR/$BINARY" "$INSTALL_DIR/"
+else
+    echo "Sudo required to move binary to $INSTALL_DIR"
+    sudo mv "$TMP_DIR/$BINARY" "$INSTALL_DIR/"
+fi
+
+# Cleanup
+rm -rf "$TMP_DIR"
+
+echo "Success! Run '$BINARY' to start."
