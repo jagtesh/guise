@@ -367,6 +367,16 @@ func (m model) View() string {
 		return "Initializing..."
 	}
 
+	if m.state == StateInputName {
+		inputBox := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(purple).
+			Padding(1, 3).
+			Render(fmt.Sprintf("Enter Name for Profile:\n\n %s_", m.textInput))
+
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, inputBox)
+	}
+
 	header := headerStyle.Render("GUISE // Identity Manager")
 	subHeader := subHeaderStyle.Render("Switch contexts seamlessly across your tools.")
 
@@ -374,15 +384,6 @@ func (m model) View() string {
 	profileList := m.renderProfileList()
 
 	content := lipgloss.JoinHorizontal(lipgloss.Top, providerList, profileList)
-
-	if m.state == StateInputName {
-		inputBox := lipgloss.NewStyle().
-				Border(lipgloss.DoubleBorder()).
-				BorderForeground(purple).
-				Padding(1, 3).
-				Render(fmt.Sprintf("Enter Name for Profile:\n\n %s_", m.textInput))
-		content = lipgloss.JoinVertical(lipgloss.Center, inputBox, "", content)
-	}
 
 	if m.err != nil {
 		content += "\n\n" + errorStyle.Render(fmt.Sprintf("Error: %v", m.err))
