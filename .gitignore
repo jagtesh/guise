@@ -1,0 +1,10 @@
+# Binaries
+guise
+dist/
+
+# VHS
+demo.gif
+demo.tape
+
+# OS
+.DS_Store
