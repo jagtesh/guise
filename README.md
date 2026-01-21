@@ -1,4 +1,4 @@
-# Guise
+# Guise ![Release](https://github.com/jagtesh/guise/actions/workflows/release.yml/badge.svg)
 
 **Guise** is a CLI identity manager for your developer tools. It allows you to seamlessly switch contexts (profiles) for tools like OpenAI Codex, Google Gemini, Anthropic Claude, and GitHub Copilot.
 
