@@ -4,13 +4,14 @@
 
 Think of it as a "vault" for your configuration files. Switch from "Personal" to "Work" credentials instantly with a beautiful TUI.
 
-![Guise](https://via.placeholder.com/800x400?text=Guise+TUI+Screenshot)
+![Guise](https://github.com/user-attachments/assets/3eea927f-f06f-4b11-b1ed-0870dadb1c0f)
 
 ## Features
 
 - **Profile Switching**: Safely swap configuration directories (e.g., `~/.codex`, `~/.config/github-copilot`).
 - **Context Awareness**: "Adopts" existing configurations so you don't lose your setup.
-- **Cross-Platform**: Works on macOS, Linux, and Windows.
+- **Cross-Platform**
+: Works on macOS, Linux, and Windows.
 - **Beautiful TUI**: Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea).
 
 ## Installation
