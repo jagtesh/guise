@@ -25,11 +25,12 @@ const (
 var (
 	// Colors
 
-purple    = lipgloss.Color("#7D56F4")
-green     = lipgloss.Color("#04B575")
-lightGray = lipgloss.Color("#767676")
-white     = lipgloss.Color("#FAFAFA")
-bg        = lipgloss.Color("#1A1B26")
+	purple    = lipgloss.Color("#7D56F4")
+	green     = lipgloss.Color("#04B575")
+	yellow    = lipgloss.Color("#FFFF00")
+	lightGray = lipgloss.Color("#767676")
+	white     = lipgloss.Color("#FAFAFA")
+	bg        = lipgloss.Color("#1A1B26")
 
 	// Styles
 
@@ -78,6 +79,10 @@ bg        = lipgloss.Color("#1A1B26")
 	errorStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF0000")).
 			Bold(true)
+
+	warningStyle = lipgloss.NewStyle().
+			Foreground(yellow).
+			Bold(true)
 )
 
 // --- Data Models ---
@@ -108,6 +113,7 @@ const (
 	StateProviderList AppState = iota
 	StateProfileList
 	StateInputName
+	StateConfirmDelete
 )
 
 type model struct {
@@ -202,10 +208,10 @@ func main() {
 	}
 
 	p := tea.NewProgram(model{
-		config     : cfg,
-		configPath : configPath,
-		baseDir    : baseDir,
-		state      : StateProviderList,
+		config:     cfg,
+		configPath: configPath,
+		baseDir:    baseDir,
+		state:      StateProviderList,
 	}, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
@@ -250,6 +256,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.state == StateInputName {
 			return updateInputName(m, msg)
+		}
+
+		if m.state == StateConfirmDelete {
+			return updateDeleteConfirmation(m, msg)
 		}
 
 		switch msg.String() {
@@ -311,14 +321,7 @@ func updateProfileList(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.textInput = ""
 		case "d":
 			if len(provider.Profiles) > 0 {
-				m.deleteProfile(m.selectedProviderIdx, m.cursor)
-				if m.cursor >= len(provider.Profiles) {
-					m.cursor = len(provider.Profiles) - 1
-				}
-				if m.cursor < 0 {
-					m.cursor = 0
-				}
-				saveConfig(m.configPath, m.config)
+				m.state = StateConfirmDelete
 			}
 		case "enter":
 			if len(provider.Profiles) > 0 {
@@ -362,6 +365,30 @@ func updateInputName(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func updateDeleteConfirmation(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "y", "Y", "enter":
+			provider := &m.config.Providers[m.selectedProviderIdx]
+			if len(provider.Profiles) > 0 {
+				m.deleteProfile(m.selectedProviderIdx, m.cursor)
+				if m.cursor >= len(provider.Profiles) {
+					m.cursor = len(provider.Profiles) - 1
+				}
+				if m.cursor < 0 {
+					m.cursor = 0
+				}
+				saveConfig(m.configPath, m.config)
+			}
+			m.state = StateProfileList
+		case "n", "N", "esc":
+			m.state = StateProfileList
+		}
+	}
+	return m, nil
+}
+
 func (m model) View() string {
 	if m.width == 0 {
 		return "Initializing..."
@@ -375,6 +402,26 @@ func (m model) View() string {
 			Render(fmt.Sprintf("Enter Name for Profile:\n\n %s_", m.textInput))
 
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, inputBox)
+	}
+
+	if m.state == StateConfirmDelete {
+		provider := m.config.Providers[m.selectedProviderIdx]
+		profileName := ""
+		if len(provider.Profiles) > m.cursor {
+			profileName = provider.Profiles[m.cursor].Name
+		}
+		
+		confirmBox := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#FF0000")).
+			Padding(1, 3).
+			Render(fmt.Sprintf(
+				"Delete profile '%s'?\n\n%s\n\n(y/n)", 
+				profileName,
+				lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).Render("WARNING: This action is not recoverable!"),
+			))
+
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, confirmBox)
 	}
 
 	header := headerStyle.Render("GUISE // Identity Manager")
@@ -432,13 +479,20 @@ func (m model) renderProfileList() string {
 		}
 	}
 
+	if activeName == "NONE" {
+		if _, err := os.Stat(p.TargetPath); err == nil {
+			activeName = "unnamed"
+			activeColor = yellow
+		}
+	}
+
 	headerStyled := lipgloss.NewStyle().Foreground(lightGray).Render(fmt.Sprintf("PROFILES: %s  |  ", p.Name)) +
 		lipgloss.NewStyle().Foreground(activeColor).Bold(true).Render(fmt.Sprintf("ACTIVE: %s", activeName))
 
 	s := ""
 	if len(p.Profiles) == 0 {
 		if _, err := os.Stat(p.TargetPath); err == nil {
-			s = lipgloss.NewStyle().Foreground(purple).Render("Existing config detected at " + p.TargetPath + "\n\nPress 'n' to save it as a profile.")
+			s = lipgloss.NewStyle().Foreground(yellow).Render("Existing config detected at " + p.TargetPath + "\n\nPress 'n' to save it as a profile.")
 		} else {
 			s = lipgloss.NewStyle().Foreground(lightGray).Render("No profiles created yet.\nPress 'n' to start fresh.")
 		}
